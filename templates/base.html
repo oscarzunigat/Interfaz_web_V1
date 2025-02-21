@@ -1,19 +1,27 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>{% block title %}Interfaz Web{% endblock %}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SSI{% endblock %}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-<!-- trabajar con bootstrap python -->
- 
 </head>
 <body>
-    <div class="banner">
-        <a href="{{ url_for('main') }}">Portada</a>
-        <a href="{{ url_for('pagina1') }}">Página 1</a>
-        <a href="{{ url_for('pagina2') }}">Página 2</a>
-    </div>
-    <div class="container">
+    <nav class="navbar navbar-expand-lg navbar-dark custom-bg">
+        <div class="container">
+            <div class="navbar-nav mx-auto">
+                <a class="nav-link" href="{{ url_for('main') }}">Portada</a>
+                <a class="nav-link" href="{{ url_for('pagina1') }}">Página 1</a>
+                <a class="nav-link" href="{{ url_for('pagina2') }}">Página 2</a>
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-3">
         {% block content %}{% endblock %}
     </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

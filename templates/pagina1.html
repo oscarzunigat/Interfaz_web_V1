@@ -1,7 +1,166 @@
 {% extends "base.html" %}
 
-{% block title %}Portada{% endblock %}
+{% block title %}SSI{% endblock %}
 
 {% block content %}
-<h1>Esta es la Página 1</h1>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interfaz de calibración</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .form-container {
+            text-align: center;
+        }
+        .logo {
+            display: block;
+            margin: 0 auto;
+            margin-top: 10px;
+        }
+        .loader-container{
+            text-align: center;
+        }
+        .loader{
+            text-align: center;
+        }
+        .message-container{
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-3">
+        <div class="header">
+            <h1>Interfaz de calibración - Waleker ME-0324</h1>
+            <img src="{{url_for('static', filename='LogoSSI.png')}}" alt="Logo" class="logo">
+        </div>
+        <div class="form-container">
+            <form method="post" action="{{url_for ('pagina1')}}" onsubmit="showLoader(); saveInputValue_write()">
+                <label for="data_name_write">Nombre del archivo de datos a escribir:</label>
+                <input type="text" id="data_name_write" name="data_name_write" required>
+                <label for="time_selected">Tiempo:</label>
+                <select id="time_selected" name="time_selected" onchange="saveSelectValue_time()">
+                    <option value="10 segundos">10 segundos</option>
+                    <option value="20 segundos">20 segundos</option>
+                    <option value="30 segundos">30 segundos</option>
+                    <option value="60 segundos">60 segundos</option>          
+                </select>
+                <button type="submit">Ejecutar</button>
+            </form>
+            <br>
+            <form method="post" action="{{url_for ('pagina1')}}" onsubmit="showGenerateLoader(); saveInputValue();">
+                <label for="data_name">Nombre del archivo de datos a leer:</label>
+                <input type="text" id="data_name" name="data_name" required>
+                <label for="y_axis">Eje Y:</label>
+                <select id="y_axis" name="y_axis" onchange="saveSelectValue()">
+                    <option value="Counts">Cuentas</option>
+                    <option value="Gravities">Gravedades</option>
+                    <option value="Meters / s²">Metros / s²</option>
+                    <option value="Centimeters / s²">Centímetros / s²</option>
+                    <option value="Milimeters / s²">Milímetros / s²</option>                
+                </select>
+                <button type="submit">Generar</button>
+            </form>
+        </div>
+        <!-- Loader para "Ejecutar" -->
+        <div id="loader" class="loader-container" style="display: none;">
+            <img class="loader" src="{{ url_for('static', filename='loading_bar.gif') }}" alt="Cargando...">
+            <p id="loader-text">Tomando prueba de X segundos...</p>
+        </div>
+        <!-- Nuevo loader para "Generar" -->
+        <div id="generate-loader" class="loader-container" style="display:none;">
+            <img class="loader" src="{{ url_for('static', filename='loading_bar.gif') }}" alt="Cargando...">
+            <p id="generate-text">Generando la gráfica...</p>
+        </div>
+        <div class="plot-container" id="plot-container">
+            {% if plot_url %}
+            <img src="data:image/png;base64,{{ plot_url }}" alt="Gráfica">
+            {% endif %}
+        </div>
+        <div class="message-container" id="message-container">
+            {% if message %}
+            <p>{{ message }}</p>
+            {% endif %}
+        </div>
+    </div>
+    <script>
+        var socket = io();
+
+        // Función para mostrar el loader al hacer clic en "Ejecutar"
+        function showLoader() {
+            var timeSelected = document.getElementById('time_selected').value;
+            document.getElementById("plot-container").style.display = "none";
+            document.getElementById("message-container").style.display = "none";
+            document.getElementById('loader-text').innerText = 'Tomando prueba de ' + timeSelected + '...';
+            document.getElementById('loader').style.display = 'block';
+        }
+
+        // Función para mostrar el loader al hacer clic en "Generar"
+        function showGenerateLoader() {
+            document.getElementById("generate-loader").style.display = "block";
+            document.getElementById("plot-container").style.display = "none";
+            document.getElementById("message-container").style.display = "none";
+            socket.emit('generate_graph', {data_name: document.getElementById('data_name').value});
+        }
+
+        // Recibir mensajes de log del servidor
+        socket.on('log_message', function(msg) {
+            document.getElementById("generate-text").textContent = msg;
+        });
+
+        function saveInputValue_write() {
+            const data_nameWrite = document.getElementById('data_name_write').value;
+            localStorage.setItem('data_name_write', dataName);
+            saveInputValue_write();
+        }
+
+        // Función para guardar el valor del archivo de datos
+        function saveInputValue() {
+            const dataName = document.getElementById('data_name').value;
+            localStorage.setItem('dataName', dataName);
+            saveSelectValue();
+        }
+
+        // Función para guardar el valor del eje Y
+        function saveSelectValue() {
+            const yAxis = document.getElementById('y_axis').value;
+            localStorage.setItem('yAxis', yAxis);
+        }
+
+        // Función para guardar el valor del tiempo
+        function saveSelectValue_time() {
+            const timeSelected= document.getElementById('time_selected').value;
+            localStorage.setItem('timeSelected', timeSelected);
+        }
+
+        // Función para cargar los valores guardados
+        function loadInputValue() {
+            const data_nameWrite = localStorage.getItem('data_name_write');
+            if (data_nameWrite){
+                document.getElementById('data_name_write').value=data_nameWrite;
+            }
+            const dataName = localStorage.getItem('dataName');
+            if (dataName) {
+                document.getElementById('data_name').value = dataName;
+            }
+            const yAxis = localStorage.getItem('yAxis');
+            if (yAxis) {
+                document.getElementById('y_axis').value = yAxis;
+            }
+        }
+        window.onload = loadInputValue;
+    </script>
+</body>
+</html>
+
 {% endblock %}
