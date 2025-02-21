@@ -1,15 +1,13 @@
-/* styles.css */
-
 .custom-bg {
     background-color: #4d82bc !important; /* Fondo azul */
 }
 
 .navbar-dark .navbar-nav .nav-link {
-    color: white !important; /* Texto blanco para los enlaces */
+    color: #000000 !important; /* Texto blanco para los enlaces */
 }
 
 .navbar-dark .navbar-nav .nav-link:hover {
-    color: #ffc107 !important; /* Color amarillo al pasar el ratón */
+    color: white !important; /* Color amarillo al pasar el ratón */
 }
 
 /* Para asegurarnos de que el texto en el banner sea visible */
@@ -22,4 +20,8 @@
     background-color: #4d82bc !important; /* Fondo azul para el banner */
     padding: 1rem;
     text-align: center;
+}
+
+.content-wrapper {
+    margin-top: 70px; /* Ajusta este valor según la altura de tu banner */
 }

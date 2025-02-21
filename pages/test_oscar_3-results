@@ -1,0 +1,29 @@
+CHANNEL EHE RESULTS:
+Frequency: 59.550000 Hz
+Magnitude: 39.751749
+Min: -12464
+Max: -4251
+Peak to peak: 8213
+Average: -8208.768017
+Standard deviation: 165.324035
+RMS: 8210.432655
+
+CHANNEL EHN RESULTS:
+Frequency: 0.016667 Hz
+Magnitude: 41.077051
+Min: -13087
+Max: -7084
+Peak to peak: 6003
+Average: -10310.954950
+Standard deviation: 161.244978
+RMS: 10312.215665
+
+CHANNEL EHZ RESULTS:
+Frequency: 59.550000 Hz
+Magnitude: 358.924454
+Min: 480084
+Max: 558013
+Peak to peak: 77929
+Average: 526450.647217
+Standard deviation: 948.719242
+RMS: 526451.502062
