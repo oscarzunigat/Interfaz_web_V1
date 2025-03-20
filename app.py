@@ -1,12 +1,14 @@
 from flask import Flask, render_template
 from pages.pagina1 import pagina1_bp
-
+from pages.pagina2 import pagina2_bp
 app = Flask(__name__)
 
 
 @app.route('/')
 def main():
     return render_template('main.html')
+
+app.register_blueprint(pagina2_bp)
 
 @app.route('/pagina2')
 def pagina2():

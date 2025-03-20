@@ -1,7 +1,85 @@
 {% extends "base.html" %}
 
-{% block title %}Portada{% endblock %}
+{% block title %}SSI{% endblock %}
 
 {% block content %}
-<h1>Esta es la Página 2</h1>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generar reportes</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .form-container {
+            text-align: center;
+        }
+        .logo {
+            display: block;
+            margin: 0 auto;
+            margin-top: 10px;
+        }
+        .loader-container{
+            text-align: center;
+        }
+        .loader{
+            text-align: center;
+        }
+        .message-container{
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-3">
+        <div class="header">
+            <h1>Generar reportes</h1>
+            <img src="{{url_for('static', filename='LogoSSI.png')}}" alt="Logo" class="logo">
+        </div>
+        <div class="form-container">
+            <form method="post" action="{{url_for ('pagina2')}}" onsubmit="showLoader(); saveInputValue_write()">
+                <label for="seleccionar_archivos">Seleccione archivos para generar reporte:</label>                
+                <button type="submit">Seleccionar</button>
+            </form>
+            <br>
+        </div>
+        <!-- Loader para "Ejecutar" -->
+        <div id="loader" class="loader-container" style="display: none;">
+            <img class="loader" src="{{ url_for('static', filename='loading_bar.gif') }}" alt="Cargando...">
+            <p id="loader-text">Generando reporte...</p>
+        </div>
+        <div class="message-container" id="message-container">
+            {% if message %}
+            <p>{{ message }}</p>
+            {% endif %}
+        </div>
+    </div>
+    <script>
+        var socket = io();
+
+        // Función para mostrar el loader al hacer clic en "Generar"
+        function showLoader() {
+            document.getElementById("plot-container").style.display = "none";
+            document.getElementById("message-container").style.display = "none";
+            document.getElementById('loader-text').innerText = 'Generando reporte...';
+            document.getElementById('loader').style.display = 'block';
+        }
+
+        // Recibir mensajes de log del servidor
+        socket.on('log_message', function(msg) {
+            document.getElementById("generate-text").textContent = msg;
+        });
+
+    </script>
+</body>
+</html>
+
 {% endblock %}
