@@ -1,32 +1,58 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}SSI{% endblock %}</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <style>
-        .content-wrapper {
-            margin-top: 70px; /* Ajusta este valor según la altura de tu banner */
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}SSI{% endblock %}</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <!-- (Puedes incluir aquí también el CSS en línea, si lo prefieres) -->
 </head>
 <body>
+  <div class="wrapper">
     <nav class="navbar navbar-expand-lg navbar-dark custom-bg fixed-top">
-        <div class="container">
-            <div class="navbar-nav mx-auto">
-                <a class="nav-link" href="{{ url_for('main') }}">Portada</a>
-                <a class="nav-link" href="{{ url_for('pagina1') }}">Calibración</a>
-                <a class="nav-link" href="{{ url_for('pagina2') }}"></a>
-            </div>
+      <div class="container">
+        <div class="navbar-nav mx-auto">
+          <a class="nav-link" href="{{ url_for('main') }}">Portada</a>
+          <a class="nav-link" href="{{ url_for('pagina1') }}">Calibración</a>
+          <a class="nav-link" href="{{ url_for('pagina2') }}">Reportes</a>
         </div>
+      </div>
     </nav>
     <div class="container content-wrapper">
-        {% block content %}{% endblock %}
+      {% block content %}{% endblock %}
     </div>
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <footer>
+      <div class="footer-main">
+        <div class="container">
+          <div class="contact-info">
+            <h5>Información de Contacto</h5>
+            <p>Correo: contacto@ssi.com.co</p>
+            <p>Dirección: Carrera 72 No. 10Bis - 153, Cali, Colombia</p>
+            <p>Teléfono: (+57) 602 390 4081</p>
+          </div>
+          <div class="links-interes">
+            <h5>Links de Interés</h5>
+            <div class="link-container">
+              <a href="https://www.ejemplo.com" target="_blank">Link de ejemplo</a>
+            </div>
+          </div>
+          <div class="logo-banner">
+            <img src="{{ url_for('static', filename='LogoSSI.png') }}" alt="Logo" class="logo">
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div class="container text-center">
+          <p>Copyright 2025 SSI | Todos los derechos reservados - Diseño Web por SSI.</p>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

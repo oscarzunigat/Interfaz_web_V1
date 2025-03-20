@@ -1,27 +1,123 @@
-.custom-bg {
-    background-color: #4d82bc !important; /* Fondo azul */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
 }
 
-.navbar-dark .navbar-nav .nav-link {
-    color: #000000 !important; /* Texto blanco para los enlaces */
+/* El contenedor principal ocupa el 100% del viewport */
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;  /* 100vh asegura que ocupa la altura completa de la ventana */
 }
 
-.navbar-dark .navbar-nav .nav-link:hover {
-    color: white !important; /* Color amarillo al pasar el ratón */
+/* El área de contenido se expande para empujar el footer hacia abajo */
+.content-wrapper {
+    flex: 1;
+    margin-top: 70px; /* Espacio para el navbar fijo */
 }
 
-/* Para asegurarnos de que el texto en el banner sea visible */
-.banner a {
-    color: white !important; /* Texto blanco para los enlaces en el banner */
-    margin: 0 1rem; /* Márgenes entre los enlaces */
-}
-
-.banner {
-    background-color: #4d82bc !important; /* Fondo azul para el banner */
+.custom-bg, .banner {
+    background-color: #003366 !important;
     padding: 1rem;
     text-align: center;
+    height: 70px;
+    overflow: hidden;
 }
 
-.content-wrapper {
-    margin-top: 70px; /* Ajusta este valor según la altura de tu banner */
+.navbar-dark .navbar-nav .nav-link,
+.banner a {
+    color: #ffffff !important;
+    margin: 0 1rem;
+    font-size: 1.5rem;
+    transition: transform 0.3s ease;
+    display: inline-block;
+}
+
+.navbar-dark .navbar-nav .nav-link:hover,
+.banner a:hover {
+    transform: scale(1.2);
+    color: #ffffff !important;
+}
+
+footer, .footer-main, .footer-main .container {
+    border: none !important;
+}
+
+/* Se añade margin-top: auto para empujar el footer al final */
+footer {
+    margin-top: auto;
+    border-top: none !important;
+    z-index: 10;
+    background-color: transparent !important;
+}
+
+/* Estilos para el footer principal */
+.footer-main {
+    background-color: #ffffff !important;
+    color: #000;
+    padding: 20px 0;
+    border-top: none !important;
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.3) !important;
+}
+
+.footer-main .container {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.footer-main .contact-info {
+    text-align: left;
+}
+.footer-main .links-interes {
+    text-align: center;
+}
+.footer-main .logo-banner {
+    text-align: right;
+}
+
+.footer-main .contact-info h5 {
+    color: #000000;
+    margin: 0 0 0.5rem 0;
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+.footer-main .contact-info p {
+    color: #000000;
+    margin: 0 0 0.5rem 0;
+    font-size: 1.2rem;
+}
+
+.footer-main .links-interes h5 {
+    color: #000000;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+.footer-main .links-interes .link-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+.footer-main .links-interes .link-container a {
+    text-decoration: none;
+    color: #000000;
+    font-size: 1.2rem;
+}
+
+.footer-main .logo-banner .logo {
+    max-height: 200px;
+    margin-left: 20px;
+}
+
+.footer-bottom {
+    background-color: #003366;
+    color: #ffffff;
+    padding: 10px 0;
+}
+.footer-bottom p {
+    margin: 0;
+    font-size: 0.9rem;
 }
