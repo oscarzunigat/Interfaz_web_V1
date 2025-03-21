@@ -3,6 +3,32 @@
 {% block title %}SSI{% endblock %}
 
 {% block content %}
-<h1>Bienvenido a la Interfaz Web</h1>
-<p>Selecciona una de las páginas en el banner para continuar.</p>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <title>Interfaz Web Portada</title>
+    <style>
+        .header{
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .content-container p {
+            text-align: center;
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-3">
+        <div class="header">
+            <h1>Interfaz Web Gestión Operativa SSI</h1>
+        </div>
+        <div class="content-container">
+            <p>Selecciona una de las páginas en el banner para continuar.</p>
+        </div>
+    </div>
+    
+</body>    
+</html>
+
 {% endblock %}

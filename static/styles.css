@@ -121,3 +121,14 @@ footer {
     margin: 0;
     font-size: 0.9rem;
 }
+
+/* PÁGINA 1*/
+.form-control {
+    width: 50%;        /* Reduce el ancho; ajusta el porcentaje o usa un valor fijo como 300px */
+    max-width: 300px;   /* Limita el ancho máximo */
+}
+
+.btn.btn-primary {
+    background-color: #003366;  /* Cambia este valor al color deseado */
+    border-color: black;      /* El color del borde; puedes ajustarlo o dejar el borde definido por ti */
+}

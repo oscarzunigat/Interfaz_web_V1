@@ -3,83 +3,70 @@
 {% block title %}SSI{% endblock %}
 
 {% block content %}
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generar reportes</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-    <style>
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .form-container {
-            text-align: center;
-        }
-        .logo {
-            display: block;
-            margin: 0 auto;
-            margin-top: 10px;
-        }
-        .loader-container{
-            text-align: center;
-        }
-        .loader{
-            text-align: center;
-        }
-        .message-container{
-            text-align: center;
-            margin-top: 20px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container mt-3">
-        <div class="header">
-            <h1>Generar reportes</h1>
-            <img src="{{url_for('static', filename='LogoSSI.png')}}" alt="Logo" class="logo">
-        </div>
-        <div class="form-container">
-            <form method="post" action="{{url_for ('pagina2')}}" onsubmit="showLoader(); saveInputValue_write()">
-                <label for="seleccionar_archivos">Seleccione archivos para generar reporte:</label>                
-                <button type="submit">Seleccionar</button>
-            </form>
-            <br>
-        </div>
-        <!-- Loader para "Ejecutar" -->
-        <div id="loader" class="loader-container" style="display: none;">
-            <img class="loader" src="{{ url_for('static', filename='loading_bar.gif') }}" alt="Cargando...">
-            <p id="loader-text">Generando reporte...</p>
-        </div>
-        <div class="message-container" id="message-container">
-            {% if message %}
-            <p>{{ message }}</p>
-            {% endif %}
-        </div>
+<div class="container mt-3">
+    <div class="header">
+        <h1>Generar Reportes</h1>
     </div>
-    <script>
-        var socket = io();
+    <div class="form-container">
+        <form id="reportForm" method="post" action="{{ url_for('pagina2') }}">
+            <!-- Primera fila: Horas -->
+            <div class="form-group">
+                <label for="hours_input" style="font-size: 1.2rem;">Analizar por 1, 12 o 24 horas:</label>
+                <input type="text" class="form-control" id="hours_input" name="hours_input" placeholder="Ingrese 1, 12 o 24" required>
+            </div>
+            <!-- Segunda fila: Días julianos -->
+            <div class="form-group">
+                <label for="julian_days" style="font-size: 1.2rem;">Días julianos a ser analizados:</label>
+                <input type="text" class="form-control" id="julian_days" name="julian_days" placeholder="Ejemplo: 123, 124" required>
+            </div>
+            <!-- Tercera fila: Botón de generar reportes -->
+            <div class="form-group">
+                <button type="button" class="btn btn-primary" id="generateBtn" style="font-size: 1.2rem; border: 2px solid #000;">
+                    Generar Reportes
+                </button>
+            </div>
+            <!-- Input oculto para seleccionar carpeta -->
+            <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none;">
+        </form>
+    </div>
+</div>
 
-        // Función para mostrar el loader al hacer clic en "Generar"
-        function showLoader() {
-            document.getElementById("plot-container").style.display = "none";
-            document.getElementById("message-container").style.display = "none";
-            document.getElementById('loader-text').innerText = 'Generando reporte...';
-            document.getElementById('loader').style.display = 'block';
+<script>
+// Al hacer clic en "Generar Reportes", se validan los campos de entrada
+document.getElementById("generateBtn").addEventListener("click", function(){
+    var hoursInput = document.getElementById("hours_input").value.trim();
+    var julianDays = document.getElementById("julian_days").value.trim();
+    
+    // Validar el campo de horas: no vacío, numérico y que sea 1, 12 o 24
+    if(hoursInput === "" || isNaN(hoursInput)){
+        alert("Por favor, ingrese un número válido para 'Analizar por 1, 12 o 24 horas'.");
+        return;
+    }
+    if(!(["1", "12", "24"].includes(hoursInput))){
+        alert("El valor para 'Analizar por 1, 12 o 24 horas' debe ser 1, 12 o 24.");
+        return;
+    }
+    
+    // Validar el campo de días julianos: no vacío y números separados por coma
+    if(julianDays === ""){
+        alert("Por favor, ingrese los días julianos a ser analizados.");
+        return;
+    }
+    var daysArray = julianDays.split(",").map(function(day){ return day.trim(); });
+    for(var i = 0; i < daysArray.length; i++){
+        if(daysArray[i] === "" || isNaN(daysArray[i])){
+            alert("Por favor, ingrese días julianos válidos (números separados por coma).");
+            return;
         }
+    }
+    
+    // Si pasa la validación, se abre el selector de carpeta
+    document.getElementById("folderInput").click();
+});
 
-        // Recibir mensajes de log del servidor
-        socket.on('log_message', function(msg) {
-            document.getElementById("generate-text").textContent = msg;
-        });
-
-    </script>
-</body>
-</html>
-
+// Cuando se selecciona la carpeta, se envía el formulario al backend
+document.getElementById("folderInput").addEventListener("change", function(){
+    document.getElementById("reportForm").submit();
+});
+</script>
 {% endblock %}
