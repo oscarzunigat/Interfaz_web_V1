@@ -1611,15 +1611,10 @@ def get_hour_from_filename(filename):
 # autor @oszu
 #*****************************************************************************
 
-from flask import Flask, render_template, request, jsonify
-import os
-from datetime import datetime, timedelta
-
 app = Flask(__name__)
 
-# Asumimos que estas funciones ya están definidas/importadas:
-# filtrar_archivos_por_dia_y_canal, get_hour_from_filename, detect_event,
-# adquire_data, signals_generator, create_pdf
+# Se asume que las funciones filtrar_archivos_por_dia_y_canal, get_hour_from_filename, detect_event,
+# adquire_data, signals_generator y create_pdf ya están definidas o importadas.
 
 @app.route('/pagina2', methods=['GET', 'POST'])
 def pagina2():
@@ -1639,16 +1634,12 @@ def pagina2():
             except ValueError:
                 raise ValueError("El campo 'Días julianos' debe contener números separados por comas.")
 
-            # Obtener los archivos enviados desde el input oculto
-            # Es importante que en el input de la plantilla HTML se agregue: name="folderInput"
-            folder_files = request.files.getlist('folderInput')
-            if not folder_files or len(folder_files) == 0:
-                raise ValueError("No se seleccionaron archivos.")
+            # Obtener los archivos .mseed enviados desde el input
+            mseed_files = request.files.getlist('mseedInput')
+            if not mseed_files or len(mseed_files) == 0:
+                raise ValueError("No se seleccionaron archivos .mseed.")
 
-            # Aquí podrías, por ejemplo, guardar temporalmente los archivos o procesarlos directamente.
-            # En este ejemplo, asumiremos que 'folder_files' es una lista de objetos FileStorage
-            # y que nuestras funciones trabajan con estos objetos.
-            archivos_seleccionados = folder_files
+            archivos_seleccionados = mseed_files
 
             # Variables fijas para el reporte
             logo_path = r'C:\Users\ssi_s\OneDrive\Escritorio\Oscar\Codigo Reporte Jorge\Reports_code_SSI\LogoSSI.png'
@@ -1663,7 +1654,6 @@ def pagina2():
 
             # Procesar cada día juliano ingresado
             for dia in dias_deseados:
-                # Filtrar archivos correspondientes al día juliano 'dia'
                 files_dia = filtrar_archivos_por_dia_y_canal(archivos_seleccionados, dia)
                 if not files_dia:
                     print(f"No se encontraron archivos para el día {dia}.")
@@ -1673,10 +1663,8 @@ def pagina2():
                 date_obj = datetime(year, 1, 1) + timedelta(days=dia - 1)
                 date_str = date_obj.strftime("%b%d")
                 if seg_option == 1:
-                    # Análisis por tramos de 1 hora
                     last_time_used = last_time_hour
                     for hr in range(24):
-                        # Para cada hora, filtrar los archivos
                         files_hour = [
                             f for f in files_dia
                             if (get_hour_from_filename(f.filename) is not None and get_hour_from_filename(f.filename) == hr)
@@ -1684,14 +1672,11 @@ def pagina2():
                         if files_hour:
                             print(f"Analizando día {dia} - hora {hr:02d}:00-{hr:02d}:59 UTC...")
                             selected_files = files_hour
-                            # Ejecutar la función de detección de eventos (ajusta según tus necesidades)
                             detect_event(selected_files, os.path.dirname(files_hour[0].filename), utc_time, last_time_used, logo_path, data_project)
-                            # Obtener datos y generar gráfica
                             df = adquire_data(selected_files, "todo", last_time_used)
                             acceleration_path, velocity_path, displacement_path, fft_path = signals_generator(
                                 selected_files, "todo", os.path.dirname(files_hour[0].filename), 1, utc_time, last_time_used
                             )
-                            # Ajustar la hora a UTC-3
                             if hr < 3:
                                 report_date = date_obj - timedelta(days=1)
                                 adjusted_hr = hr + 24 - 3
@@ -1708,7 +1693,6 @@ def pagina2():
                         else:
                             print(f"No se encontraron archivos para el día {dia} en la hora {hr:02d}:00-{hr:02d}:59.")
                 elif seg_option == 12:
-                    # Análisis por tramos de 12 horas
                     files_morning = [
                         f for f in files_dia
                         if (get_hour_from_filename(f.filename) is not None and get_hour_from_filename(f.filename) < 12)
@@ -1720,7 +1704,7 @@ def pagina2():
                     if files_morning:
                         print(f"Analizando día {dia} (00:00 - 11:59)...")
                         selected_files = files_morning
-                        detect_event(selected_files, os.path.dirname(files_morning[0].filename), utc_time, logo_path, data_project)
+                        detect_event(selected_files, os.path.dirname(files_morning[0].filename), utc_time, last_time, logo_path, data_project)
                         df = adquire_data(selected_files, "todo", last_time)
                         acceleration_path, velocity_path, displacement_path, fft_path = signals_generator(
                             selected_files, "todo", os.path.dirname(files_morning[0].filename), 1, utc_time, last_time
@@ -1750,7 +1734,6 @@ def pagina2():
                     else:
                         print(f"No se encontraron archivos para el tramo 12-23 en el día {dia}.")
                 elif seg_option == 24:
-                    # Análisis por 24 horas: usar todos los archivos del día
                     print(f"Analizando día {dia} (24 horas)...")
                     detect_event(files_dia, os.path.dirname(files_dia[0].filename), utc_time, logo_path, data_project)
                     selected_files = files_dia

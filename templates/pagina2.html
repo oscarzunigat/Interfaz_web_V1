@@ -4,69 +4,97 @@
 
 {% block content %}
 <div class="container mt-3">
-    <div class="header">
-        <h1>Generar Reportes</h1>
-    </div>
-    <div class="form-container">
-        <form id="reportForm" method="post" action="{{ url_for('pagina2') }}">
-            <!-- Primera fila: Horas -->
-            <div class="form-group">
-                <label for="hours_input" style="font-size: 1.2rem;">Analizar por 1, 12 o 24 horas:</label>
-                <input type="text" class="form-control" id="hours_input" name="hours_input" placeholder="Ingrese 1, 12 o 24" required>
-            </div>
-            <!-- Segunda fila: Días julianos -->
-            <div class="form-group">
-                <label for="julian_days" style="font-size: 1.2rem;">Días julianos a ser analizados:</label>
-                <input type="text" class="form-control" id="julian_days" name="julian_days" placeholder="Ejemplo: 123, 124" required>
-            </div>
-            <!-- Tercera fila: Botón de generar reportes -->
-            <div class="form-group">
-                <button type="button" class="btn btn-primary" id="generateBtn" style="font-size: 1.2rem; border: 2px solid #000;">
-                    Generar Reportes
-                </button>
-            </div>
-            <!-- Input oculto para seleccionar carpeta -->
-            <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none;">
-        </form>
-    </div>
+  <div class="header">
+    <h1>Generar Reportes</h1>
+  </div>
+  <div class="form-container">
+    <!-- Asegurarse de incluir enctype para enviar archivos -->
+    <form id="reportForm" method="post" action="{{ url_for('pagina2') }}" enctype="multipart/form-data">
+      <!-- Primera fila: Horas -->
+      <div class="form-group">
+        <label for="hours_input" style="font-size: 1.2rem;">Analizar por 1, 12 o 24 horas:</label>
+        <input type="text" class="form-control" id="hours_input" name="hours_input" placeholder="Ingrese 1, 12 o 24" required>
+      </div>
+      <!-- Segunda fila: Días julianos -->
+      <div class="form-group">
+        <label for="julian_days" style="font-size: 1.2rem;">Días julianos a ser analizados:</label>
+        <input type="text" class="form-control" id="julian_days" name="julian_days" placeholder="Ejemplo: 123, 124" required>
+      </div>
+      <!-- Tercera fila: Subir archivos .mseed -->
+      <div class="form-group">
+        <label for="mseedInput" style="font-size: 1.2rem;">Subir archivos con extensión .mseed:</label>
+        <button type="button" class="btn btn-secondary" id="uploadMseedBtn" style="font-size: 1.2rem; border: 2px solid #000;">Subir archivos</button>
+        <!-- Input oculto para seleccionar carpeta que contenga archivos .mseed -->
+        <input type="file" name="mseedInput" id="mseedInput" webkitdirectory directory multiple accept=".mseed" style="display: none;">
+        <!-- Div para mostrar la lista de archivos subidos -->
+        <div id="uploadedFiles" style="margin-top:10px; font-size: 1rem;"></div>
+      </div>
+      <!-- Cuarta fila: Botón de generar reportes -->
+      <div class="form-group">
+        <button type="submit" class="btn btn-primary" id="generateBtn" style="font-size: 1.2rem; border: 2px solid #000;">Generar Reportes</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script>
-// Al hacer clic en "Generar Reportes", se validan los campos de entrada
-document.getElementById("generateBtn").addEventListener("click", function(){
-    var hoursInput = document.getElementById("hours_input").value.trim();
-    var julianDays = document.getElementById("julian_days").value.trim();
-    
-    // Validar el campo de horas: no vacío, numérico y que sea 1, 12 o 24
-    if(hoursInput === "" || isNaN(hoursInput)){
-        alert("Por favor, ingrese un número válido para 'Analizar por 1, 12 o 24 horas'.");
-        return;
-    }
-    if(!(["1", "12", "24"].includes(hoursInput))){
-        alert("El valor para 'Analizar por 1, 12 o 24 horas' debe ser 1, 12 o 24.");
-        return;
-    }
-    
-    // Validar el campo de días julianos: no vacío y números separados por coma
-    if(julianDays === ""){
-        alert("Por favor, ingrese los días julianos a ser analizados.");
-        return;
-    }
-    var daysArray = julianDays.split(",").map(function(day){ return day.trim(); });
-    for(var i = 0; i < daysArray.length; i++){
-        if(daysArray[i] === "" || isNaN(daysArray[i])){
-            alert("Por favor, ingrese días julianos válidos (números separados por coma).");
-            return;
-        }
-    }
-    
-    // Si pasa la validación, se abre el selector de carpeta
-    document.getElementById("folderInput").click();
+// Al hacer clic en "Subir archivos" se activa el input oculto
+document.getElementById("uploadMseedBtn").addEventListener("click", function(){
+  document.getElementById("mseedInput").click();
 });
 
-// Cuando se selecciona la carpeta, se envía el formulario al backend
-document.getElementById("folderInput").addEventListener("change", function(){
-    document.getElementById("reportForm").submit();
+// Cuando se seleccionen archivos .mseed, se actualiza el div con sus nombres
+document.getElementById("mseedInput").addEventListener("change", function(){
+  var files = document.getElementById("mseedInput").files;
+  var uploadedDiv = document.getElementById("uploadedFiles");
+  if(files.length > 0) {
+    var fileNames = [];
+    for(var i = 0; i < files.length; i++){
+      fileNames.push(files[i].name);
+    }
+    uploadedDiv.innerText = "Archivos subidos: " + fileNames.join(", ");
+  } else {
+    uploadedDiv.innerText = "No se han subido archivos.";
+  }
+});
+
+// Validación de campos y envío del formulario al hacer clic en "Generar Reportes"
+document.getElementById("generateBtn").addEventListener("click", function(){
+  var hoursInput = document.getElementById("hours_input").value.trim();
+  var julianDays = document.getElementById("julian_days").value.trim();
+
+  // Validar el campo de horas: debe ser numérico y uno de los valores permitidos
+  if(hoursInput === "" || isNaN(hoursInput)){
+    alert("Por favor, ingrese un número válido para 'Analizar por 1, 12 o 24 horas'.");
+    return;
+  }
+  if(!(["1", "12", "24"].includes(hoursInput))){
+    alert("El valor para 'Analizar por 1, 12 o 24 horas' debe ser 1, 12 o 24.");
+    return;
+  }
+
+  // Validar que se hayan ingresado días julianos válidos
+  if(julianDays === ""){
+    alert("Por favor, ingrese los días julianos a ser analizados.");
+    return;
+  }
+  var daysArray = julianDays.split(",").map(function(day){ return day.trim(); });
+  for(var i = 0; i < daysArray.length; i++){
+    if(daysArray[i] === "" || isNaN(daysArray[i])){
+      alert("Por favor, ingrese días julianos válidos (números separados por coma).");
+      return;
+    }
+  }
+
+  // Validar que se hayan subido archivos .mseed
+  var mseedFiles = document.getElementById("mseedInput").files;
+  if(mseedFiles.length === 0){
+    alert("Por favor, suba los archivos .mseed.");
+    return;
+  }
+
+  // Enviar el formulario
+  document.getElementById("reportForm").submit();
 });
 </script>
 {% endblock %}
