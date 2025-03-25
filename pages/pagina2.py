@@ -1768,6 +1768,3 @@ def pagina2():
             message = f"Error: {str(e)}"
             print(message)
     return render_template('pagina2.html', message=message)
-
-if __name__ == "__main__":
-    app.run(debug=True)

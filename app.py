@@ -3,10 +3,11 @@ from pages.pagina1 import pagina1_bp
 from pages.pagina2 import pagina2_bp
 app = Flask(__name__)
 
-
 @app.route('/')
 def main():
     return render_template('main.html')
+
+################################ pagina 2 ################################
 
 app.register_blueprint(pagina2_bp)
 
@@ -23,5 +24,6 @@ def pagina1():
     return render_template('pagina1.html')
 
 ##########################################################################
+
 if __name__ == '__main__':
     app.run(debug=True)
