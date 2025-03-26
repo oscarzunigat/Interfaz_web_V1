@@ -9,7 +9,7 @@
     </div>
     <div class="form-container">
         <!-- Formulario para escribir datos -->
-        <form method="post" action="{{ url_for('pagina1') }}" onsubmit="showLoader(); saveInputValue_write()">
+        <form method="post" action="{{ url_for('pagina1_bp.pagina1') }}" onsubmit="showLoader(); saveInputValue_write()">
             <div class="form-group">
                 <label for="data_name_write" style="font-size: 1.2rem;">Nombre del archivo de datos a escribir:</label>
                 <input type="text" class="form-control" id="data_name_write" name="data_name_write" required>
@@ -29,7 +29,7 @@
         </form>
         <br>
         <!-- Formulario para leer datos -->
-        <form method="post" action="{{ url_for('pagina1') }}" onsubmit="showGenerateLoader(); saveInputValue();">
+        <form method="post" action="{{ url_for('pagina1_bp.pagina1') }}" onsubmit="showLoader(); saveInputValue_write()">
             <div class="form-group">
                 <label for="data_name" style="font-size: 1.2rem;">Nombre del archivo de datos a leer:</label>
                 <input type="text" class="form-control" id="data_name" name="data_name" required>

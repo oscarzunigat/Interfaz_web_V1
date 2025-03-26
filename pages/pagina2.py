@@ -18,6 +18,9 @@ from scipy.signal import butter, filtfilt
 
 from flask_socketio import SocketIO, emit
 
+import glob
+
+
 import os
 import tkinter as tk
 from tkinter import filedialog
@@ -35,6 +38,14 @@ from obspy.signal.invsim import cosine_taper
 from scipy.signal import butter, filtfilt
 import matplotlib.dates as mdates
 from obspy.signal.trigger import recursive_sta_lta 
+
+from flask import Flask, request, render_template, url_for, send_from_directory
+import os
+from datetime import datetime, timedelta
+from werkzeug.utils import secure_filename
+import re
+from flask import Blueprint, render_template, request, send_from_directory, redirect, url_for, flash, session
+
 
 pagina2_bp = Blueprint('pagina2_bp', __name__)
 
@@ -1521,7 +1532,6 @@ def create_pdf(df, data_project, save_path, logo_path,acceleration_path,
     pdf_path = os.path.join(save_path, f'{report_name}')
     pdf.output(pdf_path)
     print(f"Reporte guardado en: {pdf_path}")
-    os.startfile(pdf_path)
 
 #*****************************************************************************
 
@@ -1537,6 +1547,20 @@ def seleccionar_carpeta():
     root.destroy()
     return carpeta_seleccionada
 #*****************************************************************************
+
+
+def obtener_archivos_mseed():
+    mseed_files = request.files.getlist('mseedInput')
+    if not mseed_files or len(mseed_files) == 0:
+        raise ValueError("No se seleccionaron archivos .mseed.")
+    saved_files = []
+    for file in mseed_files:
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(file_path)
+        saved_files.append(file_path)
+    return saved_files
+
 
 #*****************************************************************************
 # Función para obtener todos los archivos .miniseed de la carpeta seleccionada
@@ -1602,6 +1626,138 @@ def get_hour_from_filename(filename):
 
 
 
+# Función para generar los reportes PDF a partir de los archivos subidos
+def generar_reportes_pdf(archivos_seleccionados, hours_input, julian_days):
+    pdf_list = []
+    seg_option = int(hours_input)
+    if seg_option not in [1, 12, 24]:
+        raise ValueError("El valor de 'Analizar por' debe ser 1, 12 o 24.")
+    try:
+        dias_deseados = [int(day.strip()) for day in julian_days.split(",")]
+    except ValueError:
+        raise ValueError("El campo 'Días julianos' debe contener números separados por comas.")
+
+    # Variables fijas para el reporte
+    logo_path = r'C:\Users\ssi_s\OneDrive\Escritorio\Oscar\Codigo Reporte Jorge\Reports_code_SSI\LogoSSI.png'
+    last_time_hour = 5   # ventana (minutos) para 1 hora
+    last_time = 10       # ventana (minutos) para 12 y 24 horas
+    utc_time = 3
+    project = 'Vibração de Solo - Braskem'
+    client = 'AGILE - BRASKEM'
+    location = 'Maceió - AL'
+    notes = ''
+    data_project = [project, client, location, notes]
+
+    for dia in dias_deseados:
+        files_dia = filtrar_archivos_por_dia_y_canal(archivos_seleccionados, dia)
+        if not files_dia:
+            print(f"No se encontraron archivos para el día {dia}.")
+            continue
+
+        year = 2025
+        date_obj = datetime(year, 1, 1) + timedelta(days=dia - 1)
+        date_str = date_obj.strftime("%b%d")
+        if seg_option == 1:
+            last_time_used = last_time_hour
+            for hr in range(24):
+                files_hour = [
+                    f for f in files_dia
+                    if get_hour_from_filename(os.path.basename(f)) is not None and 
+                       get_hour_from_filename(os.path.basename(f)) == hr
+                ]
+                if files_hour:
+                    print(f"Analizando día {dia} - hora {hr:02d}:00-{hr:02d}:59 UTC...")
+                    selected_files = files_hour
+                    directory = os.path.dirname(files_hour[0])
+                    detect_event(selected_files, directory, utc_time, last_time_used, logo_path, data_project)
+                    df = adquire_data(selected_files, "todo", last_time_used)
+                    acceleration_path, velocity_path, displacement_path, fft_path = signals_generator(
+                        selected_files, "todo", directory, 1, utc_time, last_time_used
+                    )
+                    if hr < 3:
+                        report_date = date_obj - timedelta(days=1)
+                        adjusted_hr = hr + 24 - 3
+                    else:
+                        report_date = date_obj
+                        adjusted_hr = hr - 3
+                    report_date_str = report_date.strftime("%b%d")
+                    report_name = f"Report_{report_date_str}_{adjusted_hr:02d}.pdf"
+                    create_pdf(
+                        df, data_project, directory,
+                        logo_path, acceleration_path, velocity_path, displacement_path,
+                        fft_path, last_time_used, utc_time, report_name
+                    )
+                    pdf_list.append(report_name)
+                else:
+                    print(f"No se encontraron archivos para el día {dia} en la hora {hr:02d}:00-{hr:02d}:59.")
+        elif seg_option == 12:
+            files_morning = [
+                f for f in files_dia
+                if get_hour_from_filename(os.path.basename(f)) is not None and 
+                   get_hour_from_filename(os.path.basename(f)) < 12
+            ]
+            files_afternoon = [
+                f for f in files_dia
+                if get_hour_from_filename(os.path.basename(f)) is not None and 
+                   get_hour_from_filename(os.path.basename(f)) >= 12
+            ]
+            if files_morning:
+                print(f"Analizando día {dia} (00:00 - 11:59)...")
+                selected_files = files_morning
+                directory = os.path.dirname(files_morning[0])
+                detect_event(selected_files, directory, utc_time, last_time, logo_path, data_project)
+                df = adquire_data(selected_files, "todo", last_time)
+                acceleration_path, velocity_path, displacement_path, fft_path = signals_generator(
+                    selected_files, "todo", directory, 1, utc_time, last_time
+                )
+                morning_date_obj = date_obj - timedelta(days=1)
+                morning_date_str = morning_date_obj.strftime("%b%d")
+                report_name = f"Report_{morning_date_str}_21-09.pdf"
+                create_pdf(
+                    df, data_project, directory,
+                    logo_path, acceleration_path, velocity_path, displacement_path,
+                    fft_path, last_time, utc_time, report_name
+                )
+                pdf_list.append(report_name)
+            else:
+                print(f"No se encontraron archivos para el tramo 00-11 en el día {dia}.")
+            if files_afternoon:
+                print(f"Analizando día {dia} (12:00 - 23:59)...")
+                selected_files = files_afternoon
+                directory = os.path.dirname(files_afternoon[0])
+                detect_event(selected_files, directory, utc_time, last_time, logo_path, data_project)
+                df = adquire_data(selected_files, "todo", last_time)
+                acceleration_path, velocity_path, displacement_path, fft_path = signals_generator(
+                    selected_files, "todo", directory, 1, utc_time, last_time
+                )
+                report_name = f"Report_{date_str}_09-21.pdf"
+                create_pdf(
+                    df, data_project, directory,
+                    logo_path, acceleration_path, velocity_path, displacement_path,
+                    fft_path, last_time, utc_time, report_name
+                )
+                pdf_list.append(report_name)
+            else:
+                print(f"No se encontraron archivos para el tramo 12-23 en el día {dia}.")
+        elif seg_option == 24:
+            print(f"Analizando día {dia} (24 horas)...")
+            directory = os.path.dirname(files_dia[0])
+            detect_event(files_dia, directory, utc_time, last_time, logo_path, data_project)
+            df = adquire_data(files_dia, "todo", last_time)
+            acceleration_path, velocity_path, displacement_path, fft_path = signals_generator(
+                files_dia, "todo", directory, 1, utc_time, last_time
+            )
+            report_name = f"Report_{date_str}_24.pdf"
+            create_pdf(
+                df, data_project, directory,
+                logo_path, acceleration_path, velocity_path, displacement_path,
+                fft_path, last_time, utc_time, report_name
+            )
+            pdf_list.append(report_name)
+    return pdf_list
+
+
+
 #*****************************************************************************
 # Programa principal
 # Encuentra los valores de interés (velocidades, aceleraciones, desplazamientos,
@@ -1611,143 +1767,40 @@ def get_hour_from_filename(filename):
 # autor @oszu
 #*****************************************************************************
 
-app = Flask(__name__)
+# Definición del blueprint con url_prefix '/pagina2'
+pagina2_bp = Blueprint('pagina2_bp', __name__, template_folder='templates', url_prefix='/pagina2')
 
-# Se asume que las funciones filtrar_archivos_por_dia_y_canal, get_hour_from_filename, detect_event,
-# adquire_data, signals_generator y create_pdf ya están definidas o importadas.
 
-@app.route('/pagina2', methods=['GET', 'POST'])
+# Carpeta para guardar los archivos subidos y los PDFs generados
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+@pagina2_bp.route('/', methods=['GET', 'POST'])
 def pagina2():
-    message = None
     if request.method == 'POST':
         try:
-            # Validar y obtener los valores ingresados por el usuario
+            # Antes de generar, opcionalmente eliminar PDFs anteriores
+            for pdf in glob.glob(os.path.join(UPLOAD_FOLDER, "*.pdf")):
+                os.remove(pdf)
+            archivos_guardados = obtener_archivos_mseed()
             hours_input = request.form.get('hours_input')
             julian_days = request.form.get('julian_days')
             if not hours_input or not julian_days:
                 raise ValueError("Todos los campos son obligatorios.")
-            seg_option = int(hours_input)
-            if seg_option not in [1, 12, 24]:
-                raise ValueError("El valor de 'Analizar por' debe ser 1, 12 o 24.")
-            try:
-                dias_deseados = [int(day.strip()) for day in julian_days.split(",")]
-            except ValueError:
-                raise ValueError("El campo 'Días julianos' debe contener números separados por comas.")
-
-            # Obtener los archivos .mseed enviados desde el input
-            mseed_files = request.files.getlist('mseedInput')
-            if not mseed_files or len(mseed_files) == 0:
-                raise ValueError("No se seleccionaron archivos .mseed.")
-
-            archivos_seleccionados = mseed_files
-
-            # Variables fijas para el reporte
-            logo_path = r'C:\Users\ssi_s\OneDrive\Escritorio\Oscar\Codigo Reporte Jorge\Reports_code_SSI\LogoSSI.png'
-            last_time_hour = 5   # ventana (minutos) para 1 hora
-            last_time = 10       # ventana (minutos) para 12 y 24 horas
-            utc_time = 3
-            project = 'Vibração de Solo - Braskem'
-            client = 'AGILE - BRASKEM'
-            location = 'Maceió - AL'
-            notes = ''
-            data_project = [project, client, location, notes]
-
-            # Procesar cada día juliano ingresado
-            for dia in dias_deseados:
-                files_dia = filtrar_archivos_por_dia_y_canal(archivos_seleccionados, dia)
-                if not files_dia:
-                    print(f"No se encontraron archivos para el día {dia}.")
-                    continue
-
-                year = 2025
-                date_obj = datetime(year, 1, 1) + timedelta(days=dia - 1)
-                date_str = date_obj.strftime("%b%d")
-                if seg_option == 1:
-                    last_time_used = last_time_hour
-                    for hr in range(24):
-                        files_hour = [
-                            f for f in files_dia
-                            if (get_hour_from_filename(f.filename) is not None and get_hour_from_filename(f.filename) == hr)
-                        ]
-                        if files_hour:
-                            print(f"Analizando día {dia} - hora {hr:02d}:00-{hr:02d}:59 UTC...")
-                            selected_files = files_hour
-                            detect_event(selected_files, os.path.dirname(files_hour[0].filename), utc_time, last_time_used, logo_path, data_project)
-                            df = adquire_data(selected_files, "todo", last_time_used)
-                            acceleration_path, velocity_path, displacement_path, fft_path = signals_generator(
-                                selected_files, "todo", os.path.dirname(files_hour[0].filename), 1, utc_time, last_time_used
-                            )
-                            if hr < 3:
-                                report_date = date_obj - timedelta(days=1)
-                                adjusted_hr = hr + 24 - 3
-                            else:
-                                report_date = date_obj
-                                adjusted_hr = hr - 3
-                            report_date_str = report_date.strftime("%b%d")
-                            report_name = f"Report_{report_date_str}_{adjusted_hr:02d}.pdf"
-                            create_pdf(
-                                df, data_project, os.path.dirname(files_hour[0].filename),
-                                logo_path, acceleration_path, velocity_path, displacement_path,
-                                fft_path, last_time_used, utc_time, report_name=report_name
-                            )
-                        else:
-                            print(f"No se encontraron archivos para el día {dia} en la hora {hr:02d}:00-{hr:02d}:59.")
-                elif seg_option == 12:
-                    files_morning = [
-                        f for f in files_dia
-                        if (get_hour_from_filename(f.filename) is not None and get_hour_from_filename(f.filename) < 12)
-                    ]
-                    files_afternoon = [
-                        f for f in files_dia
-                        if (get_hour_from_filename(f.filename) is not None and get_hour_from_filename(f.filename) >= 12)
-                    ]
-                    if files_morning:
-                        print(f"Analizando día {dia} (00:00 - 11:59)...")
-                        selected_files = files_morning
-                        detect_event(selected_files, os.path.dirname(files_morning[0].filename), utc_time, last_time, logo_path, data_project)
-                        df = adquire_data(selected_files, "todo", last_time)
-                        acceleration_path, velocity_path, displacement_path, fft_path = signals_generator(
-                            selected_files, "todo", os.path.dirname(files_morning[0].filename), 1, utc_time, last_time
-                        )
-                        morning_date_obj = date_obj - timedelta(days=1)
-                        morning_date_str = morning_date_obj.strftime("%b%d")
-                        create_pdf(
-                            df, data_project, os.path.dirname(files_morning[0].filename),
-                            logo_path, acceleration_path, velocity_path, displacement_path,
-                            fft_path, last_time, utc_time, report_name=f"Report_{morning_date_str}_21-09.pdf"
-                        )
-                    else:
-                        print(f"No se encontraron archivos para el tramo 00-11 en el día {dia}.")
-                    if files_afternoon:
-                        print(f"Analizando día {dia} (12:00 - 23:59)...")
-                        selected_files = files_afternoon
-                        detect_event(selected_files, os.path.dirname(files_afternoon[0].filename), utc_time, last_time, logo_path, data_project)
-                        df = adquire_data(selected_files, "todo", last_time)
-                        acceleration_path, velocity_path, displacement_path, fft_path = signals_generator(
-                            selected_files, "todo", os.path.dirname(files_afternoon[0].filename), 1, utc_time, last_time
-                        )
-                        create_pdf(
-                            df, data_project, os.path.dirname(files_afternoon[0].filename),
-                            logo_path, acceleration_path, velocity_path, displacement_path,
-                            fft_path, last_time, utc_time, report_name=f"Report_{date_str}_09-21.pdf"
-                        )
-                    else:
-                        print(f"No se encontraron archivos para el tramo 12-23 en el día {dia}.")
-                elif seg_option == 24:
-                    print(f"Analizando día {dia} (24 horas)...")
-                    detect_event(files_dia, os.path.dirname(files_dia[0].filename), utc_time, logo_path, data_project)
-                    selected_files = files_dia
-                    df = adquire_data(selected_files, "todo", last_time)
-                    acceleration_path, velocity_path, displacement_path, fft_path = signals_generator(
-                        selected_files, "todo", os.path.dirname(files_dia[0].filename), 1, utc_time, last_time
-                    )
-                    create_pdf(
-                        df, data_project, os.path.dirname(files_dia[0].filename),
-                        logo_path, acceleration_path, velocity_path, displacement_path,
-                        fft_path, last_time, utc_time, report_name=f"Report_{date_str}_24.pdf"
-                    )
-            message = "Reportes generados correctamente."
+            generated = generar_reportes_pdf(archivos_guardados, hours_input, julian_days)
+            # Almacenar la lista en sesión para mostrarla una sola vez
+            session['pdf_list'] = generated
+            flash("Reportes generados correctamente.", "success")
         except Exception as e:
-            message = f"Error: {str(e)}"
-            print(message)
-    return render_template('pagina2.html', message=message)
+            flash(f"Error: {str(e)}", "error")
+        # Redirecciona para evitar reenvío del formulario en F5
+        return redirect(url_for('pagina2_bp.pagina2'))
+    else:
+        # En GET, recuperar la lista (y eliminarla de la sesión) para que al refrescar ya no aparezca
+        pdf_list = session.pop('pdf_list', [])
+        return render_template('pagina2.html', pdf_list=pdf_list)
+
+@pagina2_bp.route('/download/<filename>')
+def download(filename):
+    return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)

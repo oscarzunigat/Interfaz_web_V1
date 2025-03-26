@@ -32,7 +32,8 @@ from scipy.signal import butter, filtfilt
 
 from flask_socketio import SocketIO, emit
 
-pagina1_bp = Blueprint('pagina1_bp', __name__)
+
+
 
 def read_data(host, port, username, password, data_name):
 
@@ -309,16 +310,17 @@ def show_test(data_test, data_results, data_name, axis_y):
 
     return plot_url
 
+from flask import Blueprint, render_template, request, jsonify
+# Otras importaciones necesarias
 
+pagina1_bp = Blueprint('pagina1_bp', __name__, template_folder='templates', url_prefix='/pagina1')
 
-
-app=Flask(__name__)
 host = '192.168.0.1'
 port = 22
 username = 'root'
 password = 'admin'
 
-@pagina1_bp.route('/pagina1', methods=['GET', 'POST'])
+@pagina1_bp.route('/', methods=['GET', 'POST'])
 def pagina1():
     plot_url = None
     message = None
@@ -330,18 +332,18 @@ def pagina1():
             data_test, data_results = read_data(host, port, username, password, data_name)
             if data_test is None:
                 print("No se pudo leer el archivo de datos")
-                message = (f"No se pudo leer el archivo de datos {data_name}.")
+                message = f"No se pudo leer el archivo de datos {data_name}."
             else:
                 plot_url = show_test(data_test, data_results, data_name, axis_y)
         elif 'data_name_write' in request.form:
             data_name_write = request.form['data_name_write']
             time_selected = request.form['time_selected']
             execute_calibration_command(host, port, username, password, data_name_write, time_selected)
-            message = (f"Comando ejecutado correctamente. Archivo creado: {data_name_write}")
+            message = f"Comando ejecutado correctamente. Archivo creado: {data_name_write}"
 
     return render_template('pagina1.html', plot_url=plot_url, message=message)
 
-@app.route('/pagina1/get_data')
+@pagina1_bp.route('/get_data')
 def get_data():
     data_name = request.args.get('data_name')
     if data_name:
@@ -352,6 +354,7 @@ def get_data():
             return jsonify(success=False, message=str(e))
     return jsonify(success=False, message="Nombre de archivo no proporcionado")
 
-@app.route('/pagina1/status')
+@pagina1_bp.route('/status')
 def status():
     return jsonify(status="completado")
+
