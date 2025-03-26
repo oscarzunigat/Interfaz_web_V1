@@ -20,7 +20,7 @@ from flask_socketio import SocketIO, emit
 
 import glob
 
-
+import uuid
 import os
 import tkinter as tk
 from tkinter import filedialog
@@ -1771,7 +1771,7 @@ def generar_reportes_pdf(archivos_seleccionados, hours_input, julian_days):
 pagina2_bp = Blueprint('pagina2_bp', __name__, template_folder='templates', url_prefix='/pagina2')
 
 
-# Carpeta para guardar los archivos subidos y los PDFs generados
+# Carpeta global para guardar los archivos subidos y los PDFs generados
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
@@ -1779,26 +1779,23 @@ if not os.path.exists(UPLOAD_FOLDER):
 @pagina2_bp.route('/', methods=['GET', 'POST'])
 def pagina2():
     if request.method == 'POST':
+        # Borrar siempre los PDFs existentes en el directorio global
+        for pdf in glob.glob(os.path.join(UPLOAD_FOLDER, "*.pdf")):
+            os.remove(pdf)
         try:
-            # Antes de generar, opcionalmente eliminar PDFs anteriores
-            for pdf in glob.glob(os.path.join(UPLOAD_FOLDER, "*.pdf")):
-                os.remove(pdf)
             archivos_guardados = obtener_archivos_mseed()
             hours_input = request.form.get('hours_input')
             julian_days = request.form.get('julian_days')
             if not hours_input or not julian_days:
                 raise ValueError("Todos los campos son obligatorios.")
-            generated = generar_reportes_pdf(archivos_guardados, hours_input, julian_days)
-            # Almacenar la lista en sesión para mostrarla una sola vez
-            session['pdf_list'] = generated
+            generar_reportes_pdf(archivos_guardados, hours_input, julian_days)
             flash("Reportes generados correctamente.", "success")
         except Exception as e:
             flash(f"Error: {str(e)}", "error")
-        # Redirecciona para evitar reenvío del formulario en F5
         return redirect(url_for('pagina2_bp.pagina2'))
     else:
-        # En GET, recuperar la lista (y eliminarla de la sesión) para que al refrescar ya no aparezca
-        pdf_list = session.pop('pdf_list', [])
+        # Listar todos los PDFs existentes en el directorio global
+        pdf_list = [os.path.basename(pdf) for pdf in glob.glob(os.path.join(UPLOAD_FOLDER, "*.pdf"))]
         return render_template('pagina2.html', pdf_list=pdf_list)
 
 @pagina2_bp.route('/download/<filename>')
