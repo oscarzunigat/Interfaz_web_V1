@@ -33,8 +33,6 @@ from scipy.signal import butter, filtfilt
 from flask_socketio import SocketIO, emit
 
 
-
-
 def read_data(host, port, username, password, data_name):
 
     # Comando WinSCP para el archivo results
@@ -144,8 +142,6 @@ def Raw2grav(tr):
 
 
 #-------------------------------------------------------------------------
-import numpy as np
-from scipy.fft import fft, fftfreq
 
 def calcular_frequency(trace, sampling_rate=1000):
 
@@ -310,8 +306,7 @@ def show_test(data_test, data_results, data_name, axis_y):
 
     return plot_url
 
-from flask import Blueprint, render_template, request, jsonify
-# Otras importaciones necesarias
+
 
 pagina1_bp = Blueprint('pagina1_bp', __name__, template_folder='templates', url_prefix='/pagina1')
 

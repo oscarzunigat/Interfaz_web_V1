@@ -1611,7 +1611,7 @@ def obtener_dias_disponibles(archivos):
     return sorted(dias_disponibles)
 #*****************************************************************************
 
-import re
+
 
 def get_hour_from_filename(filename):
     """
