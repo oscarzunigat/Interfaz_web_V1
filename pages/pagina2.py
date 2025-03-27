@@ -1779,7 +1779,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 @pagina2_bp.route('/', methods=['GET', 'POST'])
 def pagina2():
     if request.method == 'POST':
-        # Borrar siempre los PDFs existentes en el directorio global
+        # Borra todos los PDFs existentes en el directorio global
         for pdf in glob.glob(os.path.join(UPLOAD_FOLDER, "*.pdf")):
             os.remove(pdf)
         try:
@@ -1794,7 +1794,7 @@ def pagina2():
             flash(f"Error: {str(e)}", "error")
         return redirect(url_for('pagina2_bp.pagina2'))
     else:
-        # Listar todos los PDFs existentes en el directorio global
+        # En GET, lista directamente todos los PDFs existentes en el directorio global.
         pdf_list = [os.path.basename(pdf) for pdf in glob.glob(os.path.join(UPLOAD_FOLDER, "*.pdf"))]
         return render_template('pagina2.html', pdf_list=pdf_list)
 

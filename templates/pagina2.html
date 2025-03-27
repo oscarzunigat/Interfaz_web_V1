@@ -11,7 +11,11 @@
     <form id="reportForm" method="post" action="{{ url_for('pagina2_bp.pagina2') }}" enctype="multipart/form-data">
       <div class="form-group">
         <label for="hours_input" style="font-size: 1.2rem;">Analizar por 1, 12 o 24 horas:</label>
-        <input type="text" class="form-control" id="hours_input" name="hours_input" placeholder="Ingrese 1, 12 o 24" required>
+        <select class="form-control" id="hours_input" name="hours_input" style="font-size: 1.2rem;">
+          <option value="1">1 hora</option>
+          <option value="12">12 horas</option>
+          <option value="24">24 horas</option>
+        </select>
       </div>
       <div class="form-group">
         <label for="julian_days" style="font-size: 1.2rem;">Días julianos a ser analizados:</label>
@@ -72,7 +76,7 @@
       uploadedDiv.innerText = "No se han subido archivos.";
     }
   });
-
+  
   // Funciones para la animación de los puntos
   var dotsInterval;
   function startDotsAnimation() {
